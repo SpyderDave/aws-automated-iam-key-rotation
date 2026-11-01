@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Lambda that sends an email notification if a key is rotated.
+Parameters:
+  AdminEmailAddress:
+    Description: "Email address that will be used in the 'sent from' section of the email."
+    Type: String
+Resources:
+  ##################################################################
+  # [ASA Notifier Module] Lambda Role & Function
+  ##################################################################
+  NotifierFunctionExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowExecutionPermissionsOnFunction
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - Fn::Sub: "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      Policies:
+        - PolicyName: AllowNotiferToGetEmailTemplate
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: AllowFunctionToSendEmail
+                Effect: Allow
+                Action:
+                  - ses:SendEmail
+                Resource: 
+                  Fn::Sub: 'arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:identity/*' # Allow role to send email on behalf of admin email identity
+  NotifierLambdaFunction:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - NotifierFunctionExecutionRole
+    Properties:
+      Description: Function that received SNS events from config rules and emails end users who own the account id of the resource violation.
+      CodeUri: .
+      Role: !GetAtt NotifierFunctionExecutionRole.Arn
+      FunctionName: ASA-Notifier
+      Handler: main.lambda_handler
+      Timeout: 300
+      Runtime: python3.9
+      Environment:
+        Variables:
+          ADMIN_EMAIL: !Ref AdminEmailAddress
+          S3_BUCKET_NAME: '' # not in use
+          S3_BUCKET_PREFIX: '' # not in use
+Outputs:
+  oNotifierLambdaFunctionArn:
+    Description: "NotifierLambdaFunction ARN."
+    Value: 
+      Fn::GetAtt: [NotifierLambdaFunction, Arn]

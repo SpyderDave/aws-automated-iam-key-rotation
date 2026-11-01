@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "AWS CloudFormation template that deploys the ASA Notifier Module and the ASA IAM Access Keys Auto-Rotation Function."
+Parameters:
+  AccountInventoryLambdaFunctionArn:
+    Description: "AccountInventoryLambdaFunction ARN."
+    Type: String
+  AccessKeyRotateLambdaFunctionArn:
+    Description: "AccessKeyRotateLambdaFunctionArn ARN."
+    Type: String
+  NotifierLambdaFunctionArn:
+    Description: "NotifierLambdaFunctionArn ARN."
+    Type: String
+Resources:
+  ##################################################################
+  # CloudWatch event trigger to run AccountInventoryFunction 
+  #   Function on a schedule. rate(24 hours) = Once a Day
+  ##################################################################
+  RotationCloudWatchEventLambdaTrigger:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: CloudWatch Event to trigger Access Key auto-rotation Lambda Function daily
+      ScheduleExpression: 'cron(0 5 ? * 1 *)'
+      State: ENABLED
+      Targets:
+        - Arn: !Ref AccountInventoryLambdaFunctionArn
+          Id: "AccountInventoryLambdaFunctionTarget"
+  RotationCloudWatchEventLambdaTriggerLambdaPermissions:
+    Type: AWS::Lambda::Permission
+    DependsOn: RotationCloudWatchEventLambdaTrigger
+    Properties:
+      FunctionName: !Ref AccountInventoryLambdaFunctionArn
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt RotationCloudWatchEventLambdaTrigger.Arn
+
+##################################################################
+# Output section
+##################################################################
+Outputs:
+  oAccountInventoryLambdaFunction:
+    Description: "Step 1 - Lambda that dynamically collects all AWS Account IDs in an AWS organization."
+    Value: !Ref AccountInventoryLambdaFunctionArn
+  oAccessKeyRotateLambdaFunction:
+    Description: "Step 2 - Lambda that dynamically audits and rotates old IAM access keys."
+    Value: !Ref AccessKeyRotateLambdaFunctionArn
+  oNotifierLambdaFunction:
+    Description: "Step 3 - Lambda that sends an email notification if a key is rotated."
+    Value: !Ref NotifierLambdaFunctionArn

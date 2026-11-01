@@ -1,0 +1,122 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Lambda that dynamically audits and rotates old IAM access keys.
+Parameters:
+  IAMRoleName:
+    Description: "Enter the name of IAM Role that the main ASA-iam-key-auto-rotation-and-notifier-solution.yaml CloudFormation template will assume."
+    Type: String
+    Default: "asa-iam-key-rotation-lambda-assumed-role"
+  ExecutionRoleName:
+    Description: "Enter the name of IAM Execution Role that will assume the sub-account role for Lambda Execution."
+    Type: String
+    Default: "asa-iam-key-rotation-lambda-execution-role"
+  AWSOrgID:
+    Description: "Enter your AWS Organization ID, this will be used to restricted execution permissions to only approved AWS Accounts within your AWS Organization."
+    Type: String
+    Default: ""
+  IAMExemptionGroup:
+    Description: "Manage IAM Key Rotation exemptions via an IAM Group. Enter the IAM Group name being used to facilitate IAM accounts excluded from auto-key rotation."
+    Type: String
+    Default: IAMKeyRotationExemptionGroup
+  EmailTemplateEnforce:
+    Description: "Enter the file name of the email html template to be sent out by the Notifier Module for Enforce Mode. Note: Must be located in the 'S3 Bucket Prefix/Template/template_name.html' folder"
+    Type: String
+    Default: "iam-auto-key-rotation-enforcement.html"
+  EmailTemplateAudit:
+    Description: "Enter the file name of the email html template to be sent out by the Notifier Module for Audit Mode. Note: Must be located in the 'S3 Bucket Prefix/Template/template_name.html' folder"
+    Type: String
+    Default: "iam-auto-key-rotation-enforcement.html"
+  RotationPeriod:
+    Description: "The number of days after which a key should be rotated (rotating from active to inactive)."
+    Type: Number
+    Default: 90
+  InactivePeriod:
+    Description: "The number of days after which to inactivate keys that had been rotated (Note: This must be greater than RotationPeriod)."
+    Type: Number
+    Default: 100
+  InactiveBuffer:
+    Description: "The grace period between rotation and deactivation of a key."
+    Type: Number
+    Default: 10
+  RecoveryGracePeriod:
+    Description: "Recovery grace period between deactivation and deletion."
+    Type: Number
+    Default: 10
+  DryRunFlag:
+    Description: "Enables/Disables key rotation functionality. 'True' only sends notifications to end users (Audit Mode). 'False' preforms key rotation and sends notifications to end users (Remediation Mode)."
+    Type: String
+    Default: "True"
+    AllowedValues:
+      - "True"
+      - "False"
+  NotifierLambdaFunctionArn:
+    Type: String
+Resources:
+  ##################################################################
+  # [AWS IAM Access Keys Rotation Module] Lambda Role & Function
+  ##################################################################
+  RotationLambdaFunctionExecutionRole:
+    Type: AWS::IAM::Role
+    #DependsOn: NotifierLambdaFunction
+    Properties:
+      RoleName: !Ref ExecutionRoleName
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowExecutionPermissionsOnFunction
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      Policies:
+        - PolicyName: AllowRotationFunctionPermissions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                Resource: !Sub 'arn:${AWS::Partition}:iam::*:role/${IAMRoleName}' # All accounts in Org
+                Condition:
+                  StringEquals:
+                    aws:PrincipalOrgID: !Ref AWSOrgID
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !Ref NotifierLambdaFunctionArn
+  AccessKeyRotateLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: ASA Function to rotate IAM Access Keys on specified schedule
+      FunctionName: ASA-IAM-Access-Key-Rotation-Function
+      Handler: main.lambda_handler
+      Runtime: python3.8
+      Role: !GetAtt RotationLambdaFunctionExecutionRole.Arn
+      Timeout: 400
+      Environment:
+        Variables:
+          DryRunFlag: !Ref DryRunFlag
+          RotationPeriod: !Ref RotationPeriod
+          InactivePeriod: !Ref InactivePeriod
+          InactiveBuffer: !Ref InactiveBuffer
+          RecoveryGracePeriod: !Ref RecoveryGracePeriod
+          IAMExemptionGroup: !Ref IAMExemptionGroup
+          IAMAssumedRoleName: !Ref IAMRoleName
+          RoleSessionName: 'ASA-IAM-Access-Key-Rotation-Function'
+          Partition: !Sub ${AWS::Partition}
+          NotifierArn: !Ref NotifierLambdaFunctionArn
+          EmailTemplateEnforce: !Ref EmailTemplateEnforce
+          EmailTemplateAudit: !Ref EmailTemplateAudit
+      CodeUri: .
+Outputs:
+  oExecutionRoleName:
+    Description: "ExecutionRoleName."
+    Value: !Ref ExecutionRoleName
+  oAccessKeyRotateLambdaFunctionArn:
+    Description: "AccessKeyRotateLambdaFunction ARN."
+    Value: 
+      Fn::GetAtt: [AccessKeyRotateLambdaFunction, Arn]

@@ -1,0 +1,7 @@
+template_path: ASA-iam-key-auto-rotation-iam-crossaccountrole.yaml
+parameters:
+  AWSOrgID: "{{environment_variable.bamboo_OrgID}}"
+  PrimaryAccountID: "{{environment_variable.bamboo_MasterAccount}}"
+  TargetOUs: "{{environment_variable.bamboo_TargetOUs}}"
+
+

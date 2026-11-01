@@ -1,0 +1,16 @@
+template_path: ../sam-apps/access-key-auto-rotation/template.yaml
+on_failure: DO_NOTHING
+parameters:
+  ExecutionRoleName: asa-iam-key-rotation-lambda-execution-role
+  IAMRoleName: asa-iam-key-rotation-lambda-assumed-role
+  AWSOrgID: "{{environment_variable.bamboo_OrgID}}"
+  # Note: The 'DryRunFlag' parameter overrides the specific AWS account's tag
+  DryRunFlag: "{{environment_variable.bamboo_DryRun}}"
+  EmailTemplateAudit: iam-auto-key-rotation-audit.html
+  EmailTemplateEnforce: iam-auto-key-rotation-enforcement.html
+  IAMExemptionGroup: IAMKeyRotationExemptionGroup
+  InactiveBuffer: '10'
+  InactivePeriod: '100'
+  RecoveryGracePeriod: '10'
+  RotationPeriod: '90'
+  NotifierLambdaFunctionArn: !stack_output example/notifier.yaml::oNotifierLambdaFunctionArn

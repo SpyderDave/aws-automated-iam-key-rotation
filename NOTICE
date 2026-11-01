@@ -1,0 +1,15 @@
+Attribution
+
+This project is derived from the AWS sample "aws-iam-access-key-auto-rotation":
+
+  https://github.com/aws-samples/aws-iam-access-key-auto-rotation
+  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+  Licensed under the MIT No Attribution (MIT-0) license.
+
+That project provides the original CloudFormation templates, the
+access-key-auto-rotation, account-inventory and notifier Lambda functions, the
+email templates and the test events. This repository contains modifications and
+additions to that work.
+
+Some source files retain the original Amazon Web Services copyright notice in
+their headers; it is preserved here to record provenance.
