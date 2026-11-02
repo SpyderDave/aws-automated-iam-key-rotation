@@ -2,4 +2,4 @@ template_path: ../sam-apps/notifier/template.yaml
 on_failure: DO_NOTHING
 ignore: false
 parameters:
-  AdminEmailAddress: "{{environment_variable.bamboo_AdminEmail}}"
+  AdminEmailAddress: "{{environment_variable.AdminEmail}}"

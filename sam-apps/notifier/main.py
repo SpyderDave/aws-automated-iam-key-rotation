@@ -32,8 +32,7 @@ def lambda_handler(event: dict = None, context=None):
     # add invocation parameters
     template_values['sender_email'] = config.admin_email
 
-    notifier = Notifier(config.admin_email, email, config.s3_bucket_name,
-                        config.s3_bucket_prefix, email_template, subject)
+    notifier = Notifier(config.admin_email, email, email_template, subject)
     notifier.send_email(template_values)
 
 

@@ -14,6 +14,8 @@ import boto3
 import os
 import json
 import logging
+import time
+from datetime import datetime
 
 
 # setup script logging
@@ -124,33 +126,59 @@ def get_account_tags(account_id):
 def run_lambda_function(awsAccountArray, lambdaFunction):
     """
     Invokes the Lambda Function that evaluates key rotation.
+    Implements rate limiting to prevent API throttling.
 
     :return Response from Invoke command.
     """
+    # Rate limiting: max 20 accounts per minute (conservative for API safety)
+    MAX_ACCOUNTS_PER_MINUTE = 20
+
+    invoked_count = 0
+    window_start = datetime.now()
+    response = None
+
     for account in awsAccountArray:
         # skip accounts that are suspended
         if account['Status'] != 'ACTIVE':
             continue
-       
+
+        # Rate limiting check
+        invoked_count += 1
+        if invoked_count > MAX_ACCOUNTS_PER_MINUTE:
+            elapsed_seconds = (datetime.now() - window_start).total_seconds()
+            if elapsed_seconds < 60:
+                sleep_time = 60 - elapsed_seconds
+                log.info(
+                    f'Rate limit reached ({invoked_count} accounts). '
+                    f'Waiting {sleep_time:.1f}s before continuing...'
+                )
+                time.sleep(sleep_time)
+
+            # Reset counter and window
+            window_start = datetime.now()
+            invoked_count = 1
+
         account_tags = get_account_tags(account['Id'])
-       
+
         jsonPayload = {
             "account": account['Id'],
             "name": account['Name'],
             "email": account['Email'],
             "tags": account_tags
         }
-       
+
         lambdaPayloadEncoded = json.dumps(jsonPayload).encode('utf-8')
         try:
             response = lambda_client.invoke(
                 FunctionName=lambdaFunction, InvocationType='Event',
                 Payload=lambdaPayloadEncoded)
-           
+
             lambdaPayloadEncoded_str = str(lambdaPayloadEncoded)
-            log.info(f'Invoked: FunctionName= {lambdaFunction},'
+            log.info(f'Invoked: FunctionName={lambdaFunction},'
                      f' InvocationType=Event,'
-                     f' Payload= {lambdaPayloadEncoded_str}')
+                     f' Account={account["Id"]}')
         except lambda_client.exceptions.ClientError as error:
-            log.error(f'Error: {error}')
+            log.error(f'Error invoking Lambda for account {account["Id"]}: {error}')
+
+    log.info(f'Successfully invoked Lambda for {invoked_count} accounts')
     return response

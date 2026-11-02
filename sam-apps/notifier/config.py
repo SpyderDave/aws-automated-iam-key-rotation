@@ -17,5 +17,3 @@ import datetime
 @dataclass
 class Config:
     admin_email: str = os.getenv('ADMIN_EMAIL')
-    s3_bucket_name = os.getenv('S3_BUCKET_NAME')
-    s3_bucket_prefix = os.getenv('S3_BUCKET_PREFIX')

@@ -50,7 +50,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Description: "Function that calls the DescribeAccount & ListAccounts on AWS Organizations to collect all AWS Account IDs and corresponding Emails."
-      FunctionName: ASA-Account-Inventory
+      FunctionName: Account-Inventory
       Handler: account_inventory.lambda_handler
       Runtime: python3.8
       CodeUri: .

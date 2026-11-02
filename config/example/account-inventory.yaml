@@ -1,6 +1,6 @@
 template_path: ../sam-apps/account-inventory/template.yaml
 on_failure: DO_NOTHING
 parameters:
-  AWSOrgID: "{{environment_variable.bamboo_OrgID}}"
+  AWSOrgID: "{{environment_variable.OrgID}}"
   ExecutionRoleName: !stack_output example/access-key-auto-rotation.yaml::oExecutionRoleName
   AccessKeyRotateLambdaFunctionArn: !stack_output example/access-key-auto-rotation.yaml::oAccessKeyRotateLambdaFunctionArn

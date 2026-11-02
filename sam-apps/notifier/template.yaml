@@ -7,7 +7,7 @@ Parameters:
     Type: String
 Resources:
   ##################################################################
-  # [ASA Notifier Module] Lambda Role & Function
+  # [Notifier Module] Lambda Role & Function
   ##################################################################
   NotifierFunctionExecutionRole:
     Type: AWS::IAM::Role
@@ -24,7 +24,7 @@ Resources:
       ManagedPolicyArns:
         - Fn::Sub: "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
       Policies:
-        - PolicyName: AllowNotiferToGetEmailTemplate
+        - PolicyName: AllowNotifierToSendEmail
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -32,25 +32,23 @@ Resources:
                 Effect: Allow
                 Action:
                   - ses:SendEmail
-                Resource: 
-                  Fn::Sub: 'arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:identity/*' # Allow role to send email on behalf of admin email identity
+                Resource:
+                  Fn::Sub: 'arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:identity/*'
   NotifierLambdaFunction:
     Type: AWS::Serverless::Function
     DependsOn:
       - NotifierFunctionExecutionRole
     Properties:
-      Description: Function that received SNS events from config rules and emails end users who own the account id of the resource violation.
+      Description: Function that sends email notifications for IAM key rotation events.
       CodeUri: .
       Role: !GetAtt NotifierFunctionExecutionRole.Arn
-      FunctionName: ASA-Notifier
+      FunctionName: Notifier
       Handler: main.lambda_handler
       Timeout: 300
       Runtime: python3.9
       Environment:
         Variables:
           ADMIN_EMAIL: !Ref AdminEmailAddress
-          S3_BUCKET_NAME: '' # not in use
-          S3_BUCKET_PREFIX: '' # not in use
 Outputs:
   oNotifierLambdaFunctionArn:
     Description: "NotifierLambdaFunction ARN."

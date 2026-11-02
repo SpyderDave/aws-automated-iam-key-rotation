@@ -1,4 +1,4 @@
-template_path: ASA-iam-key-auto-rotation-and-notifier-solution.yaml
+template_path: iam-key-auto-rotation-and-notifier-solution.yaml
 parameters:
   AccountInventoryLambdaFunctionArn: !stack_output example/account-inventory.yaml::oAccountInventoryLambdaFunctionArn
   NotifierLambdaFunctionArn: !stack_output example/notifier.yaml::oNotifierLambdaFunctionArn

@@ -15,6 +15,7 @@ import dateutil.tz
 from enum import Enum
 from config import Config, log
 from exemption_handler import validate_exemption_group
+from retry_handler import retry_with_backoff
 
 
 class ActionReasons(Enum):

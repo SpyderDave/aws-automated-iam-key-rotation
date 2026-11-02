@@ -1,6 +1,6 @@
 {
 	"email": "PLACE EMAIL HERE", 
-	"invokedby": "arn:PARTITION:lambda:REGION:ACCOUNT:function:ASA-IAM-Access-Key-Rotation-Function",
+	"invokedby": "arn:PARTITION:lambda:REGION:ACCOUNT:function:IAM-Access-Key-Rotation-Function",
 	"subject": "[IMPORTANT] Active AWS IAM Access Key was Rotated to Inactive due to Key Age Security Violation.",
 	"email_template": "iam-auto-key-rotation-enforcement.html",
     "template_values": {

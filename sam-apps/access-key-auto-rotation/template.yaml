@@ -3,13 +3,13 @@ Transform: 'AWS::Serverless-2016-10-31'
 Description: Lambda that dynamically audits and rotates old IAM access keys.
 Parameters:
   IAMRoleName:
-    Description: "Enter the name of IAM Role that the main ASA-iam-key-auto-rotation-and-notifier-solution.yaml CloudFormation template will assume."
+    Description: "Enter the name of IAM Role that the main iam-key-auto-rotation-and-notifier-solution.yaml CloudFormation template will assume."
     Type: String
-    Default: "asa-iam-key-rotation-lambda-assumed-role"
+    Default: "iam-key-rotation-lambda-assumed-role"
   ExecutionRoleName:
     Description: "Enter the name of IAM Execution Role that will assume the sub-account role for Lambda Execution."
     Type: String
-    Default: "asa-iam-key-rotation-lambda-execution-role"
+    Default: "iam-key-rotation-lambda-execution-role"
   AWSOrgID:
     Description: "Enter your AWS Organization ID, this will be used to restricted execution permissions to only approved AWS Accounts within your AWS Organization."
     Type: String
@@ -91,8 +91,8 @@ Resources:
   AccessKeyRotateLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Description: ASA Function to rotate IAM Access Keys on specified schedule
-      FunctionName: ASA-IAM-Access-Key-Rotation-Function
+      Description: Function to rotate IAM Access Keys on specified schedule
+      FunctionName: IAM-Access-Key-Rotation-Function
       Handler: main.lambda_handler
       Runtime: python3.8
       Role: !GetAtt RotationLambdaFunctionExecutionRole.Arn
@@ -106,7 +106,7 @@ Resources:
           RecoveryGracePeriod: !Ref RecoveryGracePeriod
           IAMExemptionGroup: !Ref IAMExemptionGroup
           IAMAssumedRoleName: !Ref IAMRoleName
-          RoleSessionName: 'ASA-IAM-Access-Key-Rotation-Function'
+          RoleSessionName: 'IAM-Access-Key-Rotation-Function'
           Partition: !Sub ${AWS::Partition}
           NotifierArn: !Ref NotifierLambdaFunctionArn
           EmailTemplateEnforce: !Ref EmailTemplateEnforce
